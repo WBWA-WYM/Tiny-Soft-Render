@@ -1,0 +1,10 @@
+^E:\DEV\VSCODE TINYRENDER\TINY-SOFT-RENDER\BUILD\CMAKEFILES\891B57070513D79B73DC7E95F172349C\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SE:/dev/VSCODE TinyRender/Tiny-Soft-Render" "-BE:/dev/VSCODE TinyRender/Tiny-Soft-Render/build" --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file "E:/dev/VSCODE TinyRender/Tiny-Soft-Render/build/TinyRender.sln"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
