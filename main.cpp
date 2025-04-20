@@ -9,6 +9,7 @@ using namespace glm;
 
 int main(int argc, char* argv[]) {
 	//initial
+	//pos gol up fov asp near far
 	auto camera = new maincamera(
 		vec3(0.0f, 0.0f, 3.0f),
 		vec3(0.0f, 0.0f, 0.0f),
