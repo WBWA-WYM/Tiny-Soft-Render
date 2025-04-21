@@ -92,30 +92,40 @@ void Mesh::triangle(glm::vec3 &v1, glm::vec3 &v2, glm::vec3 &v3,glm::vec3 &v4)
 void Mesh::cube(float size, int textureID, glm::vec4 positionOffset)
 {
     float h = size * 0.5f;
-    // 8 个顶点
+    // 8 个顶点（固定）
     glm::vec3 pos[8] = {
-        {-h,-h,-h},{ h,-h,-h},{ h, h,-h},{-h, h,-h},
-        {-h,-h, h},{ h,-h, h},{ h, h, h},{-h, h, h}
+        {-h,-h,-h}, { h,-h,-h}, { h, h,-h}, {-h, h,-h},  // 后面 (Z−)
+        {-h,-h, h}, { h,-h, h}, { h, h, h}, {-h, h, h}   // 前面 (Z+)
     };
-    // 正常情况下，立方体六面共 12 个三角形，36 个索引
+
+    // **所有面都按 CCW 绕向定义**（从外部看时顶点逆时针）
     unsigned int idx[36] = {
-        0,1,2, 2,3,0,  // 后面
-        4,5,6, 6,7,4,  // 前面
-        0,4,7, 7,3,0,  // 左面
-        1,5,6, 6,2,1,  // 右面
-        3,2,6, 6,7,3,  // 上面
-        0,1,5, 5,4,0   // 下面
+        // 后面 (Z−)，看向 -Z 方向，CCW: 0→1→2, 0→2→3
+        0, 1, 2,   0, 2, 3,
+        // 前面 (Z+)，看向 +Z 方向，CCW: 4→6→5, 4→7→6
+        4, 6, 5,   4, 7, 6,
+        // 左面 (X−)，看向 -X 方向，CCW: 0→3→7, 0→7→4
+        0, 3, 7,   0, 7, 4,
+        // 右面 (X+)，看向 +X 方向，CCW: 1→5→6, 1→6→2
+        1, 5, 6,   1, 6, 2,
+        // 顶面 (Y+)，看向 +Y 方向，CCW: 3→2→6, 3→6→7
+        3, 2, 6,   3, 6, 7,
+        // 底面 (Y−)，看向 -Y 方向，CCW: 0→4→5, 0→5→1
+        0, 4, 5,   0, 5, 1
     };
 
     vertices.resize(8);
-    index.assign(idx, idx+36);
+    index.assign(idx, idx + 36);
+
     for (int i = 0; i < 8; ++i) {
         vertices[i].position = glm::vec4(pos[i] + glm::vec3(positionOffset), 1.0f);
-        // 简化：法线可按面重计算，这里先置为单位向量
-        vertices[i].normal = glm::normalize(pos[i]);
-        // UV 简化：根据顶点在立方体的哪一面再自定义
-        vertices[i].texcoord = { (pos[i].x>0)?1.0f:0.0f, (pos[i].y>0)?1.0f:0.0f };
-        vertices[i].color = glm::vec4(1.0f);
+        // 简单法线，用面中心法线更精确但可按此简化
+        vertices[i].normal   = glm::normalize(pos[i]);
+        // UV 简化：按 x/y 分配
+        vertices[i].texcoord = { (pos[i].x > 0.0f) ? 1.0f : 0.0f,
+                                 (pos[i].y > 0.0f) ? 1.0f : 0.0f };
+        // 示例：给每个立方体一个颜色属性，便于调试
+        vertices[i].color    = glm::vec4(0.8f, 0.2f, 0.2f, 1.0f);
     }
 }
 
@@ -123,34 +133,41 @@ void Mesh::plane(float width, float height, int textureID, glm::vec4 positionOff
 {
     float w2 = width * 0.5f;
     float h2 = height * 0.5f;
-    vertices.resize(4);
-    index = {0,1,2,  0,2,3};
+
+    vertices.clear();
+    index = {0, 1, 2, 0, 2, 3};
 
     // 顶点位置 (X,Z平面)，法线 +Y，UV
-    vertices[0].position = { -w2, 0.0f, -h2, 1.0f };
-    vertices[0].normal   = { 0.0f, 1.0f, 0.0f };
-    vertices[0].texcoord = { 0.0f, 0.0f };
+    Vertex v0, v1, v2, v3;
 
-    vertices[1].position = {  w2, 0.0f, -h2, 1.0f };
-    vertices[1].normal   = { 0.0f, 1.0f, 0.0f };
-    vertices[1].texcoord = { 1.0f, 0.0f };
+    v0.position = glm::vec4(-w2, 0.0f, -h2, 1.0f);
+    v0.normal   = glm::vec3(0.0f, 1.0f, 0.0f);
+    v0.texcoord = glm::vec2(0.0f, 0.0f);
+    v0.color    = glm::vec4(1.0f);
 
-    vertices[2].position = {  w2, 0.0f,  h2, 1.0f };
-    vertices[2].normal   = { 0.0f, 1.0f, 0.0f };
-    vertices[2].texcoord = { 1.0f, 1.0f };
+    v1.position = glm::vec4( w2, 0.0f, -h2, 1.0f);
+    v1.normal   = glm::vec3(0.0f, 1.0f, 0.0f);
+    v1.texcoord = glm::vec2(1.0f, 0.0f);
+    v1.color    = glm::vec4(1.0f);
 
-    vertices[3].position = { -w2, 0.0f,  h2, 1.0f };
-    vertices[3].normal   = { 0.0f, 1.0f, 0.0f };
-    vertices[3].texcoord = { 0.0f, 1.0f };
+    v2.position = glm::vec4( w2, 0.0f,  h2, 1.0f);
+    v2.normal   = glm::vec3(0.0f, 1.0f, 0.0f);
+    v2.texcoord = glm::vec2(1.0f, 1.0f);
+    v2.color    = glm::vec4(1.0f);
+
+    v3.position = glm::vec4(-w2, 0.0f,  h2, 1.0f);
+    v3.normal   = glm::vec3(0.0f, 1.0f, 0.0f);
+    v3.texcoord = glm::vec2(0.0f, 1.0f);
+    v3.color    = glm::vec4(1.0f);
 
     // 整体平移
-    for (auto &v : vertices) {
-        v.position += positionOffset;
-    }
+    v0.position += positionOffset;
+    v1.position += positionOffset;
+    v2.position += positionOffset;
+    v3.position += positionOffset;
 
-    // 贴图 ID
-    for (auto &v : vertices) {
-        v.color = glm::vec4(1.0f); // 如果片元着色器需要 Color，可用 alpha 保存 textureID
-        v.texcoord = v.texcoord;
-    }
+    vertices.push_back(v0);
+    vertices.push_back(v1);
+    vertices.push_back(v2);
+    vertices.push_back(v3);
 }
