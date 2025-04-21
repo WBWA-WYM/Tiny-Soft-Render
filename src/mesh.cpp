@@ -88,3 +88,69 @@ void Mesh::triangle(glm::vec3 &v1, glm::vec3 &v2, glm::vec3 &v3,glm::vec3 &v4)
     index[9]=2; index[10]=0; index[11]=3;
 
 }
+
+void Mesh::cube(float size, int textureID, glm::vec4 positionOffset)
+{
+    float h = size * 0.5f;
+    // 8 个顶点
+    glm::vec3 pos[8] = {
+        {-h,-h,-h},{ h,-h,-h},{ h, h,-h},{-h, h,-h},
+        {-h,-h, h},{ h,-h, h},{ h, h, h},{-h, h, h}
+    };
+    // 正常情况下，立方体六面共 12 个三角形，36 个索引
+    unsigned int idx[36] = {
+        0,1,2, 2,3,0,  // 后面
+        4,5,6, 6,7,4,  // 前面
+        0,4,7, 7,3,0,  // 左面
+        1,5,6, 6,2,1,  // 右面
+        3,2,6, 6,7,3,  // 上面
+        0,1,5, 5,4,0   // 下面
+    };
+
+    vertices.resize(8);
+    index.assign(idx, idx+36);
+    for (int i = 0; i < 8; ++i) {
+        vertices[i].position = glm::vec4(pos[i] + glm::vec3(positionOffset), 1.0f);
+        // 简化：法线可按面重计算，这里先置为单位向量
+        vertices[i].normal = glm::normalize(pos[i]);
+        // UV 简化：根据顶点在立方体的哪一面再自定义
+        vertices[i].texcoord = { (pos[i].x>0)?1.0f:0.0f, (pos[i].y>0)?1.0f:0.0f };
+        vertices[i].color = glm::vec4(1.0f);
+    }
+}
+
+void Mesh::plane(float width, float height, int textureID, glm::vec4 positionOffset)
+{
+    float w2 = width * 0.5f;
+    float h2 = height * 0.5f;
+    vertices.resize(4);
+    index = {0,1,2,  0,2,3};
+
+    // 顶点位置 (X,Z平面)，法线 +Y，UV
+    vertices[0].position = { -w2, 0.0f, -h2, 1.0f };
+    vertices[0].normal   = { 0.0f, 1.0f, 0.0f };
+    vertices[0].texcoord = { 0.0f, 0.0f };
+
+    vertices[1].position = {  w2, 0.0f, -h2, 1.0f };
+    vertices[1].normal   = { 0.0f, 1.0f, 0.0f };
+    vertices[1].texcoord = { 1.0f, 0.0f };
+
+    vertices[2].position = {  w2, 0.0f,  h2, 1.0f };
+    vertices[2].normal   = { 0.0f, 1.0f, 0.0f };
+    vertices[2].texcoord = { 1.0f, 1.0f };
+
+    vertices[3].position = { -w2, 0.0f,  h2, 1.0f };
+    vertices[3].normal   = { 0.0f, 1.0f, 0.0f };
+    vertices[3].texcoord = { 0.0f, 1.0f };
+
+    // 整体平移
+    for (auto &v : vertices) {
+        v.position += positionOffset;
+    }
+
+    // 贴图 ID
+    for (auto &v : vertices) {
+        v.color = glm::vec4(1.0f); // 如果片元着色器需要 Color，可用 alpha 保存 textureID
+        v.texcoord = v.texcoord;
+    }
+}

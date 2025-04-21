@@ -54,7 +54,6 @@ void Pipeline::drawIndex(RenderMode mode,maincamera* camera,SDL_Renderer* render
         else if(mode==Fill)
         {
             DrawTriangleBarycentric(renderer,v1,v2,v3);
-            SDL_RenderPresent(renderer);
         }
     }
 }
@@ -62,9 +61,9 @@ void Pipeline::drawIndex(RenderMode mode,maincamera* camera,SDL_Renderer* render
 void Pipeline::setViewMatrix()
 {
     glm::mat4 viewportMatrixTmp(1.0f);
-    viewportMatrixTmp[0][0] = width * 0.5f;  // X 轴缩放
-    viewportMatrixTmp[1][1] = height * 0.5f; // Y 轴缩放
-    viewportMatrixTmp[3][0] = width * 0.5f;  // X 平移
-    viewportMatrixTmp[3][1] = height * 0.5f; // Y 平移
+    viewportMatrixTmp[0][0] =  width * 0.5f;
+    viewportMatrixTmp[1][1] = -height * 0.5f;  // 翻转 Y
+    viewportMatrixTmp[3][0] =  width * 0.5f;
+    viewportMatrixTmp[3][1] =  height * 0.5f;
     viewPortMatrix = viewportMatrixTmp;
 }

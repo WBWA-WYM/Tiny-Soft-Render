@@ -3,6 +3,20 @@
 #include "camera.h"
 #include "pipeline.h"
 #include "mesh.h"
+// helper: 将一个 Mesh 的顶点/索引追加到场景缓冲，并且加上偏移，使得每个mesh互相索引不会冲突
+void appendMeshToScene(
+    const Mesh& mesh,
+    std::vector<Vertex>& sceneVerts,
+    std::vector<unsigned int>& sceneIdx
+) {
+    unsigned int base = (unsigned int)sceneVerts.size();
+    // append verts
+    sceneVerts.insert(sceneVerts.end(), mesh.vertices.begin(), mesh.vertices.end());
+    // append indices (with offset)
+    for (auto i : mesh.index) {
+        sceneIdx.push_back(base + i);
+    }
+}
 int width = 600;
 const int height = 400;
 using namespace glm;
@@ -11,7 +25,7 @@ int main(int argc, char* argv[]) {
 	//initial
 	//pos gol up fov asp near far
 	auto camera = new maincamera(
-		vec3(0.0f, 0.0f, 3.0f),
+		vec3(0.0f, 2.0f, 5.0f),
 		vec3(0.0f, 0.0f, 0.0f),
 		vec3(0.0f, 1.0f, 0.0f),
 		glm::radians(45.0f),
@@ -19,6 +33,32 @@ int main(int argc, char* argv[]) {
 		0.1f,
 		100.0f
 	);
+
+	// 准备一个大的场景顶点/索引缓冲
+	std::vector<Vertex> sceneVertices;
+	std::vector<unsigned int> sceneIndices;
+	// 1) 地面：10×10 平面，center 在 (0,0,0)
+{
+    Mesh ground;
+    ground.plane(10.0f, 10.0f, /*textureID*/0, glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
+    appendMeshToScene(ground, sceneVertices, sceneIndices);
+}
+
+// 2) 多个立方体：边长 1，排列成 3×3 网格，间距 2
+{
+    float cubeSize = 1.0f;
+    float spacing  = 2.0f;
+    for (int row = 0; row < 3; ++row) {
+        for (int col = 0; col < 3; ++col) {
+            float x = (col - 1) * spacing;
+            float z = (row - 1) * spacing;
+            Mesh cube;
+            // 偏移位置 (x, 高度 = cubeSize/2, z)，让立方体底面正好接触地面
+            cube.cube(cubeSize, /*textureID*/0, glm::vec4(x, cubeSize*0.5f, z, 0.0f));
+            appendMeshToScene(cube, sceneVertices, sceneIndices);
+        }
+    }
+}
 	SDL_Window* window;
 	SDL_Renderer* renderer;
 	auto pipeline = new Pipeline(width,height);
@@ -26,19 +66,10 @@ int main(int argc, char* argv[]) {
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	pipeline->initialize(camera);
 
-	//Mesh push in
-	glm::vec3 v1(-0.5f, -0.5f, 0.0f);
-	glm::vec3 v2(0.5f, -0.5f, 0.0f);
-	glm::vec3 v3(0.0f, 0.5f, 0.0f);
-
-    Mesh *msh=new Mesh();
-    msh->triangle(v1,v2,v3);
-	//pipeline push in
-	msh->triangle(v1,v2,v3);
-    pipeline->setVertexBuffer(msh->vertices);
-    pipeline->setIndexBuffer(msh->index);
+	// 3) 送入管线
+	pipeline->setVertexBuffer(sceneVertices);
+	pipeline->setIndexBuffer(sceneIndices);
 		
-
 	SDL_Event sdlEvent;
     bool quit = false;
 	while (!quit) {
@@ -50,7 +81,7 @@ int main(int argc, char* argv[]) {
 		//pipeline cycle
 		pipeline->clearBuffer(glm::vec4(0,0,0,1.0f),false,renderer);
         pipeline->drawIndex(Pipeline::Fill,camera,renderer);
-
+		SDL_RenderPresent(renderer);
 		//CAMERA Update
 		camera->updateCamera();
 

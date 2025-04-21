@@ -22,4 +22,6 @@ public:
     void pyramid();
     void cube(double width, double height, double depth, int id, glm::vec4 pos);
     void plane(double width,double height,int id,glm::vec4 pos);
+    void cube(float size, int textureID, glm::vec4 positionOffset);
+    void plane(float width, float height, int textureID, glm::vec4 positionOffset);
 };
